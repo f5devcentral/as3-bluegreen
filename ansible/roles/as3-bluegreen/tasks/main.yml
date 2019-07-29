@@ -8,6 +8,11 @@
   set_fact:
     dataGroup: "{{partition}}_bluegreen_datagroup"
 
+- name: Create tmp directory
+  file:
+    path: "{{role_path}}/files/tmp/"
+    state: directory
+
 - name: Transform iRule template
   template: src="{{role_path}}/files/bluegreen-irule-template.tcl" dest="{{role_path}}/files/tmp/{{partition}}_irule.tcl"
 
