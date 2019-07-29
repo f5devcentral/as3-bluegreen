@@ -1,0 +1,22 @@
+---
+# Credentials
+BIGIPadminUsername: "admin"
+BIGIPadminPassword: "admin"
+deviceName1: "bigip1.f5demo.com"
+
+# Used for Application Services 3
+partition: "BlueGreenApp"
+application: "A1"
+service: "serviceMain"
+virtualAddress: "10.0.2.11"
+virtualPort: "80"
+serverAddress1: "10.0.3.6"
+servicePort1: "83"
+serverAddress2: "10.0.3.6"
+servicePort2: "86"
+
+# Used for BlueGreen iRule and Data Group
+cookiePrefix: "bg"
+distribution: "0.45"
+bluePool: "bluePool"
+greenPool: "greenPool"

@@ -1,0 +1,7 @@
+---
+-
+  hosts: localhost
+  vars_files:
+    - ../vars/main-variables.yml
+  roles:
+    - as3-bluegreen

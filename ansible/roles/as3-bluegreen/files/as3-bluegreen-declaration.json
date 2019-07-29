@@ -1,0 +1,100 @@
+{
+    "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/3.12.0/as3-schema-3.12.0-5.json",
+    "class": "AS3",
+    "action": "deploy",
+    "persist": true,
+    "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.9.0",
+        "id": "id_{{partition}}",
+        "label": "{{partition}}",
+        "remark": "An HTTP service with percentage based traffic distribution",
+        "{{partition}}": {
+            "class": "Tenant",
+            "{{application}}": {
+                "class": "Application",
+                "template": "http",
+                "{{service}}": {
+                    "class": "Service_HTTP",
+                    "virtualAddresses": [
+                        "{{virtualAddress}}"
+                    ],
+                    "virtualPort": {{virtualPort}},
+                    "persistenceMethods": [],
+                    "iRules": [
+                        "{{iRuleName}}"
+                    ]
+                },
+                "{{bluePool}}": {
+                    "class": "Pool",
+                    "loadBalancingMode": "round-robin",
+                    "members": [
+                        {
+                            "servicePort": {{servicePort1}},
+                            "serverAddresses": [
+                                "{{serverAddress1}}"
+                            ],
+                            "shareNodes": true
+                        }
+                    ],
+                    "monitors": [
+                        {
+                            "use": "custom_http_monitor"
+                        }
+                    ]
+                },
+                "{{greenPool}}": {
+                    "class": "Pool",
+                    "loadBalancingMode": "round-robin",
+                    "members": [
+                        {
+                            "servicePort": {{servicePort2}},
+                            "serverAddresses": [
+                                "{{serverAddress2}}"
+                            ],
+                            "shareNodes": true
+                        }
+                    ],
+                    "monitors": [
+                        {
+                            "use": "custom_http_monitor"
+                        }
+                    ]
+                },
+                "custom_http_monitor": {
+                    "class": "Monitor",
+                    "monitorType": "http",
+                    "send": "GET / HTTP/1.0\r\n",
+                    "receive": "HTTP/1.1 200 OK",
+                    "interval": 5,
+                    "timeout": 16
+                },
+                "{{dataGroup}}": {
+                    "class": "Data_Group",
+                    "remark": "BlueGreen Data Group for service",
+                    "keyDataType": "string",
+                    "records": [
+                        {
+                            "key": "distribution",
+                            "value": "{{distribution}}"
+                        },
+                        {
+                            "key": "blue_pool",
+                            "value": "/{{partition}}/{{application}}/{{bluePool}}"
+                        },
+                        {
+                            "key": "green_pool",
+                            "value": "/{{partition}}/{{application}}/{{greenPool}}"
+                        }
+                    ]
+                },
+                "{{iRuleName}}": {
+                    "class": "iRule",
+                    "iRule": {
+                        "base64": "{{iRuleResultB64}}"
+                    }
+                }
+            }
+        }
+    }
+}
