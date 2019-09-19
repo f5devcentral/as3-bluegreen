@@ -33,7 +33,7 @@ when HTTP_REQUEST {
     set cookie_exists [HTTP::cookie exists $blue_green_cookie]
     call debug_log $DEBUG "distribution: $distribution"
 
-    switch $distribution {
+    switch -- $distribution {
         "0.0" {
             pool $green_pool
             call debug_log $DEBUG "defaulting to green pool"
