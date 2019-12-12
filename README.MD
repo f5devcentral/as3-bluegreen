@@ -1,7 +1,7 @@
 # Simple BIG-IP BlueGreen deployment using AS3 and Ansible in a Docker container based on the following implementation https://github.com/aknot242/bigip-blue-green
 
 ## Dependencies
-- Ansible 2.5
+- Ansible 2.5+
 - F5 Super NetOps Docker container https://hub.docker.com/r/f5usecases/f5-rs-container/
 
 ## Prerequisites
