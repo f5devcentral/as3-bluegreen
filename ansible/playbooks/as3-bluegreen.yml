@@ -1,7 +1,5 @@
 ---
--
-  hosts: localhost
-  vars_files:
-    - ../vars/main-variables.yml
+- hosts: big_ips
+  connection: local
   roles:
     - as3-bluegreen

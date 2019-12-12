@@ -24,49 +24,38 @@
   set_fact:
     iRuleResultB64: "{{ iRuleResult.stdout | b64encode }}"
 
-- name: Get BIG-IP Authentication Token from {{deviceName1}}
-  delegate_to: localhost
+- name: Get BIG-IP Authentication Token from {{ bigip_provider.server }}
   uri:
-    body: '{"username":"{{BIGIPadminUsername}}","password":"{{BIGIPadminPassword}}","loginProviderName":"tmos"}'
+    body: '{"username":"{{ bigip_provider.user}}","password":"{{ bigip_provider.password}}","loginProviderName":"tmos"}'
     body_format: json
     method: POST
-    url: "https://{{deviceName1}}/mgmt/shared/authn/login"
+    url: "https://{{ bigip_provider.server }}/mgmt/shared/authn/login"
     status_code: 200
-    validate_certs: no
-  register: bigip1_auth_response
+    validate_certs: "{{ bigip_provider.validate_certs }}"
+  register: bigip_auth_response
   retries: 30
   delay: 5
-  until: "(bigip1_auth_response | success) and (bigip1_auth_response.status == 200)"
+  until: "(bigip_auth_response is successful) and (bigip_auth_response.status == 200)"
 
-- name: Assign Auth Token to Variable
-  set_fact:
-    bigip1_auth_token: "{{bigip1_auth_response.json.token.token}}"
+- name: Validate AS3 rest worker is ready
+  uri:
+    headers:
+      X-F5-Auth-Token: "{{ bigip_auth_response.json.token.token }}"
+    method: GET
+    url: "https://{{ bigip_provider.server }}/mgmt/shared/appsvcs/available"
+    validate_certs: "{{ bigip_provider.validate_certs }}"
+  retries: 30
+  delay: 5
+  register: result
+  until: "(result is successful) and (result.status == 200)"
 
 - name: Prepare the AS3 declaration
   template: src="{{role_path}}/files/as3-bluegreen-declaration.json" dest="{{role_path}}/files/tmp/{{partition}}_declaration.json"
   delegate_to: localhost
 
-- name: Validate {{deviceName1}} AS3 Rest Worker is ready
-  delegate_to: localhost
-  uri:
-    headers:
-      X-F5-Auth-Token: "{{bigip1_auth_token}}"
-    method: GET
-    url: "https://{{deviceName1}}/mgmt/shared/appsvcs/available"
-    validate_certs: no
-  retries: 30
-  delay: 5
-  register: result
-  until: "(result | success) and (result.status == 200)"
-
 - name: Create or update HTTP services in one declaration
+  bigip_appsvcs_extension:
+    content: "{{ lookup('file','{{role_path}}/files/tmp/' + '{{partition}}_declaration.json') }}"
+    state: present
+    provider: "{{ bigip_provider }}"
   delegate_to: localhost
-  uri:
-    body: "{{ lookup('file','{{role_path}}/files/tmp/' + '{{partition}}_declaration.json') }}"
-    body_format: json
-    headers:
-      X-F5-Auth-Token: "{{bigip1_auth_token}}"
-    method: POST
-    status_code: 200
-    url: "https://{{deviceName1}}/mgmt/shared/appsvcs/declare"
-    validate_certs: no

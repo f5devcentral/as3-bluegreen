@@ -1,1 +1,2 @@
 ansible/roles/as3-bluegreen/files/tmp
+load/__pycache__
