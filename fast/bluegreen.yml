@@ -1,0 +1,125 @@
+title: Blue / Green
+description: Generate Blue/Green deployment.  After you deploy this template you can add/remove pool members for the blue/green pools using Event-Driven Service discovery.  The target pools will be available at https://[MGMT IP]/mgmt/shared/service-discovery/task/~[Tenant]~[App]~[pool name]/nodes
+definitions:
+  partition:
+    title: "Target partition"
+    description: "Desired partition"
+  virtualAddress:
+    title: "What is the IP address of the service"
+    description: "This is the IP address of the service."
+  virtualPort:
+    title: "Virtual Port"
+    type: integer
+  application:
+    title: "What is the App name [App]"
+  service:
+    title: "What is the service"
+  distribution:
+    title: "Percentage"
+  bluePool:
+    title: "Name of Blue pool"
+  greenPool:
+    title: "Name of Green pool"
+parameters:
+  application: App
+  virtualPort: 80
+  distribution: "0.5"
+  service: Web
+  bluePool: blue
+  greenPool: green
+template: |
+    {
+        "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/3.12.0/as3-schema-3.12.0-5.json",
+        "class": "AS3",
+        "action": "deploy",
+        "persist": true,
+        "declaration": {
+            "class": "ADC",
+            "schemaVersion": "3.9.0",
+            "id": "id_{{partition}}",
+            "label": "{{partition}}",
+            "remark": "An HTTP service with percentage based traffic distribution",
+            "{{partition}}": {
+                "class": "Tenant",
+                "{{application}}": {
+                    "class": "Application",
+                    "service": {
+                        "class": "Service_HTTP",
+                        "virtualAddresses": [
+                            "{{virtualAddress}}"
+                        ],
+                        "virtualPort": {{virtualPort}},
+                        "persistenceMethods": [],
+                        "iRules": [
+                            "{{partition}}_bluegreen_irule"
+                        ]
+                    },
+                    "{{bluePool}}": {
+                        "class": "Pool",
+                        "loadBalancingMode": "round-robin",
+                        "members": [
+                            {
+                                "servicePort": 80,
+                                "addressDiscovery": "event", 
+                                "shareNodes": true
+                            }
+                        ],
+                        "monitors": [
+                            {
+                                "use": "custom_http_monitor"
+                            }
+                        ]
+                    },
+                    "{{greenPool}}": {
+                        "class": "Pool",
+                        "loadBalancingMode": "round-robin",
+                        "members": [
+                            {
+                                "servicePort": 80,
+                                "addressDiscovery": "event", 
+                                "shareNodes": true
+                            }
+                        ],
+                        "monitors": [
+                            {
+                                "use": "custom_http_monitor"
+                            }
+                        ]
+                    },
+                    "custom_http_monitor": {
+                        "class": "Monitor",
+                        "monitorType": "http",
+                        "send": "GET / HTTP/1.0\r\n",
+                        "receive": "HTTP/1.1 200 OK",
+                        "interval": 5,
+                        "timeout": 16
+                    },
+                    "bluegreen_datagroup": {
+                        "class": "Data_Group",
+                        "remark": "BlueGreen Data Group for service",
+                        "keyDataType": "string",
+                        "records": [
+                            {
+                                "key": "distribution",
+                                "value": "{{distribution}}"
+                            },
+                            {
+                                "key": "blue_pool",
+                                "value": "/{{partition}}/{{application}}/{{bluePool}}"
+                            },
+                            {
+                                "key": "green_pool",
+                                "value": "/{{partition}}/{{application}}/{{greenPool}}"
+                            }
+                        ]
+                    },
+                    "{{partition}}_bluegreen_irule": {
+                        "class": "iRule",
+                        "iRule": {
+                            "base64": "IyBCbHVlR3JlZW4gaVJ1bGUKIyBCYXNlZCBvbiBCSUctSVAgQmx1ZUdyZWVuIC0gaHR0cHM6Ly9naXRodWIuY29tL2Frbm90MjQyL2JpZ2lwLWJsdWUtZ3JlZW4KCnByb2MgZ2V0X2Nvb2tpZV9uYW1lIHt9IHsKICAgIHJldHVybiAiYmx1ZWdyZWVuW3N0cmluZyBtYXAgIi8gXyIgW3ZpcnR1YWwgbmFtZV1dIgp9Cgpwcm9jIHZhbGlkYXRlX3Bvb2wge3JlcXVlc3RlZF9wb29sIGJsdWVfcG9vbCBncmVlbl9wb29sfSB7CiAgICBzZXQgdmFsaWRfcG9vbHMgW2xpc3QgJGJsdWVfcG9vbCAkZ3JlZW5fcG9vbF0KICAgIGlmIHtbbHNlYXJjaCAkdmFsaWRfcG9vbHMgJHJlcXVlc3RlZF9wb29sXSAhPSAtMX0gewogICAgICAgIHJldHVybiAkcmVxdWVzdGVkX3Bvb2wKICAgIH0gZWxzZSB7CiAgICAgICAgIyBpZiByZXF1ZXN0ZWQgcG9vbCBpc24ndCBlaXRoZXIgYmx1ZSBvciBncmVlbiwgcmV0dXJuIGJsdWUuCiAgICAgICAgcmV0dXJuIFtsaW5kZXggJHZhbGlkX3Bvb2xzIDBdCiAgICB9Cn0KCnByb2MgZGVidWdfbG9nIHtmbGFnIG1lc3NhZ2V9IHsKICAgIGlmIHsgJGZsYWcgfSB7IGxvZyBsb2NhbDAuICRtZXNzYWdlIH0KfQoKd2hlbiBDTElFTlRfQUNDRVBURUQgewogICAgc2V0IERFQlVHIDAKICAgIHNldCBjb29raWVfZXhwaXJhdGlvbl9zZWNvbmRzIDEyMDAKfQoKd2hlbiBIVFRQX1JFUVVFU1QgewogICAgIyBVc2UgdGhpcyB0byBzZXQgdGhlIGNvb2tpZSBuYW1lIGFzIHdlbGwgYXMgdG8gbG9vayB1cCB0aGUgZGlzdHJpYnV0aW9uIGFuZCBwb29sIG5hbWUgc2V0dGluZ3MgZnJvbSB0aGUgZGF0YWdyb3VwCiAgICBzZXQgZGlzdHJpYnV0aW9uIFtjbGFzcyBtYXRjaCAtdmFsdWUgImRpc3RyaWJ1dGlvbiIgZXF1YWxzIGJsdWVncmVlbl9kYXRhZ3JvdXBdCiAgICBzZXQgYmx1ZV9wb29sIFtjbGFzcyBtYXRjaCAtdmFsdWUgImJsdWVfcG9vbCIgZXF1YWxzIGJsdWVncmVlbl9kYXRhZ3JvdXBdCiAgICBzZXQgZ3JlZW5fcG9vbCBbY2xhc3MgbWF0Y2ggLXZhbHVlICJncmVlbl9wb29sIiBlcXVhbHMgYmx1ZWdyZWVuX2RhdGFncm91cF0KICAgIHNldCBibHVlX2dyZWVuX2Nvb2tpZSBbY2FsbCBnZXRfY29va2llX25hbWVdCiAgICBzZXQgY29va2llX2V4aXN0cyBbSFRUUDo6Y29va2llIGV4aXN0cyAkYmx1ZV9ncmVlbl9jb29raWVdCiAgICBjYWxsIGRlYnVnX2xvZyAkREVCVUcgImRpc3RyaWJ1dGlvbjogJGRpc3RyaWJ1dGlvbiIKCiAgICBzd2l0Y2ggLS0gJGRpc3RyaWJ1dGlvbiB7CiAgICAgICAgIjAuMCIgewogICAgICAgICAgICBwb29sICRncmVlbl9wb29sCiAgICAgICAgICAgIGNhbGwgZGVidWdfbG9nICRERUJVRyAiZGVmYXVsdGluZyB0byBncmVlbiBwb29sIgogICAgICAgICAgICBzZXQgcmVtb3ZlX2Nvb2tpZSAxCiAgICAgICAgfQogICAgICAgIAogICAgICAgICIxLjAiIHsKICAgICAgICAgICAgcG9vbCAkYmx1ZV9wb29sCiAgICAgICAgICAgIGNhbGwgZGVidWdfbG9nICRERUJVRyAiZGVmYXVsdGluZyB0byBibHVlIHBvb2wiCiAgICAgICAgICAgIHNldCByZW1vdmVfY29va2llIDEKICAgICAgICB9CiAgICAKICAgICAgICBkZWZhdWx0IHsKICAgICAgICAgICAgIyBDaGVjayBpZiB0aGVyZSBpcyBhIHBvb2wgc2VsZWN0b3IgY29va2llIGluIHRoZSByZXF1ZXN0CiAgICAgICAgICAgIGlmIHsgJGNvb2tpZV9leGlzdHMgfSB7CiAgICAgICAgICAgICAgICAjIE1ha2Ugc3VyZSB0aGF0IHRoZSBwb29sIGluIHRoZSBjb29raWUgaXMgb25lIG9mIGVpdGhlciBibHVlIG9yIGdyZWVuIHBvb2xzLiBQcmV2ZW50IHRoZSBjbGllbnQgZnJvbSB1c2luZyBhbiB1bmRlc2lyZWQgcG9vbC4KICAgICAgICAgICAgICAgIHNldCBwb29sX25hbWUgW2NhbGwgdmFsaWRhdGVfcG9vbCBbSFRUUDo6Y29va2llICRibHVlX2dyZWVuX2Nvb2tpZV0gJGJsdWVfcG9vbCAkZ3JlZW5fcG9vbF0KICAgICAgICAgICAgICAgIGNhbGwgZGVidWdfbG9nICRERUJVRyAidmFsaWRhdGVkIHBvb2w6ICRwb29sX25hbWUiCiAgICAgICAgICAgICAgICBwb29sICRwb29sX25hbWUKICAgICAgICAgICAgICAgIHNldCBjb29raWVfdmFsdWVfdG9fc2V0ICIiCiAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAjIE5vIHBvb2wgc2VsZWN0b3IgY29va2llLCBzbyBjaG9vc2UgYSBwb29sIGJhc2VkIG9uIHRoZSBkYXRhZ3JvdXAgZGlzdHJpYnV0aW9uCiAgICAgICAgICAgICAgICBzZXQgcmFuZCBbZXhwciB7IHJhbmQoKSB9XQogICAgICAgICAgICAgICAgaWYgeyAkcmFuZCA8ICRkaXN0cmlidXRpb24gfSB7IAogICAgICAgICAgICAgICAgICAgIHBvb2wgJGJsdWVfcG9vbAogICAgICAgICAgICAgICAgICAgIHNldCBjb29raWVfdmFsdWVfdG9fc2V0ICRibHVlX3Bvb2wKICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgcG9vbCAkZ3JlZW5fcG9vbAogICAgICAgICAgICAgICAgICAgIHNldCBjb29raWVfdmFsdWVfdG9fc2V0ICRncmVlbl9wb29sCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9Cn0KCndoZW4gSFRUUF9SRVNQT05TRSB7CiAgICAjIFNldCBhIHBvb2wgc2VsZWN0b3IgY29va2llIGZyb20gdGhlIHBvb2wgdGhhdCB3YXMgd2FzIHNlbGVjdGVkIGZvciB0aGlzIHJlcXVlc3QKICAgIGlmIHtbaW5mbyBleGlzdHMgY29va2llX3ZhbHVlX3RvX3NldF0gJiYgJGNvb2tpZV92YWx1ZV90b19zZXQgbmUgIiJ9ewogICAgICAgIGNhbGwgZGVidWdfbG9nICRERUJVRyAiaW5zZXJ0aW5nIGNvb2tpZSIKICAgICAgICBIVFRQOjpjb29raWUgaW5zZXJ0IG5hbWUgJGJsdWVfZ3JlZW5fY29va2llIHZhbHVlICRjb29raWVfdmFsdWVfdG9fc2V0IHBhdGggIi8iCiAgICAgICAgSFRUUDo6Y29va2llIGV4cGlyZXMgJGJsdWVfZ3JlZW5fY29va2llICRjb29raWVfZXhwaXJhdGlvbl9zZWNvbmRzIHJlbGF0aXZlCiAgICB9IGVsc2VpZiB7JGNvb2tpZV9leGlzdHMgJiYgW2luZm8gZXhpc3RzIHJlbW92ZV9jb29raWVdIH0gewogICAgICAgIHVuc2V0IC0tIHJlbW92ZV9jb29raWUKICAgICAgICAjIElmIHRoZXJlIGlzIG5vIG5lZWQgdG8gc3RvcmUgYSBzZWxlY3RlZCBwb29sIGluIGEgY29va2llLCByZW1vdmUgYW55IHByZXZpb3VzbHkgc3RvcmVkIGJsdWUtZ3JlZW4gY29va2llIGZvciB0aGlzIHZzCiAgICAgICAgY2FsbCBkZWJ1Z19sb2cgJERFQlVHICJyZW1vdmluZyBjb29raWUgJGJsdWVfZ3JlZW5fY29va2llIgogICAgICAgIEhUVFA6OmhlYWRlciBpbnNlcnQgU2V0LUNvb2tpZSAiJGJsdWVfZ3JlZW5fY29va2llPWRlbGV0ZWQ7ZXhwaXJlcz1UaHUsIDAxIEphbiAxOTcwIDAwOjAwOjAwIEdNVCIKICAgIH0KfQ=="
+                        }
+                    }
+                }
+            }
+        }
+    }
