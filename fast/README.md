@@ -39,3 +39,47 @@ $ cat parameters.json
 }
 $ curl -u admin:[password] -k -H content-type:application/json https://[mgmt ip]/mgmt/shared/fast/applications
 ```
+
+Updates to the pools can be done via the Event-Driven service discovery API.
+
+```
+# update blue
+$ cat blue.json
+[
+    {
+        "id": "blue",
+        "ip": "192.168.128.2",
+        "port": 80
+    }
+]
+$ curl -u admin:$PASSWORD https://[MGMT IP]/mgmt/shared/service-discovery/task/~[Partition]~[App Name]~blue/nodes -H content-type:application/json -d @./blue.json -k
+# update green
+$ cat green.json
+[
+    {
+        "id": "green",
+        "ip": "192.168.128.3",
+        "port": 80
+    }
+]
+$ curl -u admin:$PASSWORD https://[MGMT IP]/mgmt/shared/service-discovery/task/~[Partition]~[App Name]~green/nodes -H content-type:application/json -d @./green.json -k
+```
+
+## Results
+
+You should traffic match the distribution that you input.
+
+```
+$ curl 192.0.2.10
+Server address: 192.168.128.2:80
+Server name: node1
+Date: 05/Feb/2021:11:38:48 +0000
+URI: /
+Request ID: a224e13fd6ac596bbe0ca8ad7fa0ac48
+$ curl 192.0.2.10
+Server address: 192.168.128.3:80
+Server name: node2
+Date: 05/Feb/2021:11:38:58 +0000
+URI: /
+Request ID: ea7e5fbd8ee7455420673838a29575aa
+```
