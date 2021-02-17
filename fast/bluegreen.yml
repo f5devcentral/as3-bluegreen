@@ -21,6 +21,12 @@ definitions:
     title: "Name of Blue pool"
   greenPool:
     title: "Name of Green pool"
+  enableIRule:
+    title: "Use iRule"
+    type: boolean
+  defaultPool:
+    title: "Specify name of default pool (blue or green)"
+
 parameters:
   application: App
   virtualPort: 80
@@ -28,6 +34,8 @@ parameters:
   service: Web
   bluePool: blue
   greenPool: green
+  enableIRule: true
+  defaultPool: "blue"
 template: |
     {
         "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/3.25.0/as3-schema-3.25.0-3.json",
@@ -55,9 +63,12 @@ template: |
                             "bigip":"/Common/fastL4"
                         },
                         "snat":"auto",
+                        {{#enableIRule}}
                         "iRules": [
                             "{{partition}}_bluegreen_irule"
-                        ]
+                        ],
+                        {{/enableIRule}}
+                        "pool": "{{defaultpool}}"
                     },
                     "{{bluePool}}": {
                         "class": "Pool",
@@ -71,7 +82,7 @@ template: |
                         ],
                         "monitors": [
                             {
-                                "use": "custom_http_monitor"
+                                "bigip": "/Common/tcp"
                             }
                         ]
                     },
@@ -87,17 +98,9 @@ template: |
                         ],
                         "monitors": [
                             {
-                                "use": "custom_http_monitor"
+                                "bigip": "/Common/tcp"
                             }
                         ]
-                    },
-                    "custom_http_monitor": {
-                        "class": "Monitor",
-                        "monitorType": "http",
-                        "send": "GET / HTTP/1.0\r\n",
-                        "receive": "HTTP/1.1 200 OK",
-                        "interval": 5,
-                        "timeout": 16
                     },
                     "bluegreen_datagroup": {
                         "class": "Data_Group",
