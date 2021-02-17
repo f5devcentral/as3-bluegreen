@@ -21,8 +21,8 @@ definitions:
     title: "Name of Blue pool"
   greenPool:
     title: "Name of Green pool"
-  enableIRule:
-    title: "Use iRule"
+  enableBGDistribution:
+    title: "Enable Blue-Green traffic distribution"
     type: boolean
   defaultPool:
     title: "Specify name of default pool (blue or green)"
@@ -34,7 +34,7 @@ parameters:
   service: Web
   bluePool: blue
   greenPool: green
-  enableIRule: true
+  enableBGDistribution: true
   defaultPool: "blue"
 template: |
     {
@@ -63,11 +63,11 @@ template: |
                             "bigip":"/Common/fastL4"
                         },
                         "snat":"auto",
-                        {{#enableIRule}}
+                        {{#enableBGDistribution}}
                         "iRules": [
                             "{{partition}}_bluegreen_irule"
                         ],
-                        {{/enableIRule}}
+                        {{/enableBGDistribution}}
                         "pool": "{{defaultpool}}"
                     },
                     "{{bluePool}}": {
