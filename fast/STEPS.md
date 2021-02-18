@@ -39,7 +39,7 @@ https://[mgmt ip]/mgmt/shared/fast/applications
 }
 ```
 
-3. change default pool to green version by setting `defaultPool = green`
+3. change the distribution by setting `distribution = 0.7`
 ```json
 {"name":"bluegreen/bluegreen",
 "parameters": {
@@ -47,7 +47,24 @@ https://[mgmt ip]/mgmt/shared/fast/applications
       "virtualAddress": "192.0.2.10",
       "virtualPort": 80,
       "application": "App",
-      "distribution": "0.5",
+      "distribution": "0.7",
+      "bluePool": "blue",
+      "greenPool": "green",
+      "enableBGDistribution": true,
+      "defaultPool": "blue"
+    }
+}
+```
+
+4. change default pool to green version by setting `defaultPool = green`
+```json
+{"name":"bluegreen/bluegreen",
+"parameters": {
+      "partition": "Test",
+      "virtualAddress": "192.0.2.10",
+      "virtualPort": 80,
+      "application": "App",
+      "distribution": "0.7",
       "bluePool": "blue",
       "greenPool": "green",
       "enableBGDistribution": true,
@@ -56,7 +73,7 @@ https://[mgmt ip]/mgmt/shared/fast/applications
 }
 ```
 
-4. disable distribution by setting `enableBGDistribution = false`
+5. disable distribution by setting `enableBGDistribution = false`
 ```json
 {"name":"bluegreen/bluegreen",
 "parameters": {
@@ -64,7 +81,7 @@ https://[mgmt ip]/mgmt/shared/fast/applications
       "virtualAddress": "192.0.2.10",
       "virtualPort": 80,
       "application": "App",
-      "distribution": "0.5",
+      "distribution": "0.7",
       "bluePool": "blue",
       "greenPool": "green",
       "enableBGDistribution": false, 
