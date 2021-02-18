@@ -1,2 +1,3 @@
 ansible/roles/as3-bluegreen/files/tmp
 load/__pycache__
+fast/bluegreen.zip

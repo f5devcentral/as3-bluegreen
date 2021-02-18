@@ -4,27 +4,36 @@
 
 This provides a FAST template for creating a Blue/Green deployment of an HTTP service.
 
-The inputs that you provide are the virtual server address and the  percentage of traffic that you want to send to the "blue" pool.
+The inputs that you provide are 
+- the BIG-IP partition in which the configuration will be deployed (e.g. Tenant1)
+- the destination address of the virtual server address (e.g. 10.1.10.1)
+- the service port for the virtual server (e.g. 80)
+- the name of the application service (e.g. MyApplication)
+- the proportion of traffic that you want to send to the "green" pool, from 0.0 to 1.0 (e.g. 0.7)
+- the name of the "blue" pool (e.g. blue_pool)
+- the name of the "green" pool (e.g. green_pool)
+- whether to enable the routing iRule
+- the name of the default pool (e.g. blue_pool)
 
-Once you deploy the template you can update the blue/green pools using Event-Driven Service Discovery.
+Once you deploy the template you can update the members of the blue and green pools using Event-Driven Service Discovery.
 
 ## Installing
 
-You will need to have both AS3 (3.24 or later recommended) / FAST installed on the target BIG-IP devices.
+You will need to have both [AS3](https://github.com/F5Networks/f5-appsvcs-extension) (3.24 or later recommended) / [FAST](https://github.com/F5Networks/f5-appsvcs-templates) installed on the target BIG-IP devices.
 
 To install the template you will need to create a zip file of the `bluegreen.yml` file:
 
-```
+```bash
 $ zip -r bluegreen.zip bluegreen.yaml
 ```
 
 Upload the zip file as a FAST template.  Once installed you can configure via the GUI
 
-![](./fast-bluegreen.png)
+![FAST blue-green UI](./fast-bluegreen.png)
 
 Or via the API.
 
-```
+```bash
 $ cat parameters.json
 {"name":"bluegreen/bluegreen",
 "parameters": {
@@ -34,7 +43,9 @@ $ cat parameters.json
       "application": "App",
       "distribution": "0.5",
       "bluePool": "blue",
-      "greenPool": "green"
+      "greenPool": "green",
+      "enableBGDistribution": true,
+      "defaultPool": "blue"
     }
 }
 $ curl -u admin:[password] -k -H content-type:application/json https://[mgmt ip]/mgmt/shared/fast/applications
