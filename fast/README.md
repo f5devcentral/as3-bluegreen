@@ -15,7 +15,8 @@ The inputs that you provide are
 - whether to enable the routing iRule
 - the name of the default pool (e.g. blue_pool)
 
-Once you deploy the template you can update the members of the blue and green pools using Event-Driven Service Discovery.
+Once you deploy the template you can update the members of the blue and green pools using Event-Driven Service Discovery.  
+You can also [progressively switch service load from blue to green](STEPS.md).
 
 ## Installing
 
