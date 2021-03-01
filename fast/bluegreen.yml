@@ -1,0 +1,133 @@
+title: Blue / Green
+description: Generate Blue/Green deployment.  After you deploy this template you can add/remove pool members for the blue/green pools using Event-Driven Service discovery.  The target pools will be available at https://[MGMT IP]/mgmt/shared/service-discovery/task/~[Tenant]~[App]~[pool name]/nodes
+definitions:
+  partition:
+    title: "Target partition"
+    description: "Desired partition"
+  virtualAddress:
+    title: "What is the IP address of the service"
+    description: "This is the IP address of the service."
+  virtualPort:
+    title: "Virtual Port"
+    type: integer
+  application:
+    title: "What is the App name [App]"
+  service:
+    title: "What is the service"
+  distribution:
+    title: "Percentage"
+    description: "Amount of traffic (value between 0.0 and 1.0) to send to blue or green.  0.0 will send all traffic to blue, 1.0 will send all traffic to green.  0.5 will send 50% to blue and 50% to green."
+  bluePool:
+    title: "Name of Blue pool"
+  greenPool:
+    title: "Name of Green pool"
+  enableBGDistribution:
+    title: "Enable Blue-Green traffic distribution"
+    type: boolean
+  defaultPool:
+    title: "Specify name of default pool (blue or green)"
+
+parameters:
+  application: App
+  virtualPort: 80
+  distribution: "0.5"
+  service: Web
+  bluePool: blue
+  greenPool: green
+  enableBGDistribution: true
+  defaultPool: "blue"
+template: |
+    {
+        "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/3.25.0/as3-schema-3.25.0-3.json",
+        "class": "AS3",
+        "action": "deploy",
+        "persist": true,
+        "declaration": {
+            "class": "ADC",
+            "schemaVersion": "3.25.0",
+            "id": "id_{{partition}}",
+            "label": "{{partition}}",
+            "remark": "An HTTP service with percentage based traffic distribution",
+            "{{partition}}": {
+                "class": "Tenant",
+                "{{application}}": {
+                    "class": "Application",
+                    "service": {
+                        "class": "Service_L4",
+                        "virtualAddresses": [
+                            "{{virtualAddress}}"
+                        ],
+                        "virtualPort": {{virtualPort}},
+                        "persistenceMethods": [],
+                        "profileL4": {
+                            "bigip":"/Common/fastL4"
+                        },
+                        "snat":"auto",
+                        {{#enableBGDistribution}}
+                        "iRules": [
+                            "{{partition}}_bluegreen_irule"
+                        ],
+                        {{/enableBGDistribution}}
+                        "pool": "{{defaultpool}}"
+                    },
+                    "{{bluePool}}": {
+                        "class": "Pool",
+                        "loadBalancingMode": "round-robin",
+                        "members": [
+                            {
+                                "servicePort": 80,
+                                "addressDiscovery": "event",
+                                "shareNodes": true
+                            }
+                        ],
+                        "monitors": [
+                            {
+                                "bigip": "/Common/tcp"
+                            }
+                        ]
+                    },
+                    "{{greenPool}}": {
+                        "class": "Pool",
+                        "loadBalancingMode": "round-robin",
+                        "members": [
+                            {
+                                "servicePort": 80,
+                                "addressDiscovery": "event",
+                                "shareNodes": true
+                            }
+                        ],
+                        "monitors": [
+                            {
+                                "bigip": "/Common/tcp"
+                            }
+                        ]
+                    },
+                    "bluegreen_datagroup": {
+                        "class": "Data_Group",
+                        "remark": "BlueGreen Data Group for service",
+                        "keyDataType": "string",
+                        "records": [
+                            {
+                                "key": "distribution",
+                                "value": "{{distribution}}"
+                            },
+                            {
+                                "key": "blue_pool",
+                                "value": "/{{partition}}/{{application}}/{{bluePool}}"
+                            },
+                            {
+                                "key": "green_pool",
+                                "value": "/{{partition}}/{{application}}/{{greenPool}}"
+                            }
+                        ]
+                    },
+                    "{{partition}}_bluegreen_irule": {
+                        "class": "iRule",
+                        "iRule": {
+                            "base64": "Cgp3aGVuIENMSUVOVF9BQ0NFUFRFRCB7CiAgICAgICAgc2V0IGRpc3RyaWJ1dGlvbiBbY2xhc3MgbWF0Y2ggLXZhbHVlICJkaXN0cmlidXRpb24iIGVxdWFscyBibHVlZ3JlZW5fZGF0YWdyb3VwXQogICAgICAgIHNldCBibHVlX3Bvb2wgW2NsYXNzIG1hdGNoIC12YWx1ZSAiYmx1ZV9wb29sIiBlcXVhbHMgYmx1ZWdyZWVuX2RhdGFncm91cF0KICAgICAgICBzZXQgZ3JlZW5fcG9vbCBbY2xhc3MgbWF0Y2ggLXZhbHVlICJncmVlbl9wb29sIiBlcXVhbHMgYmx1ZWdyZWVuX2RhdGFncm91cF0KICAgICAgICAgICAgICAgIHNldCByYW5kIFtleHByIHsgcmFuZCgpIH1dCiAgICAgICAgICAgICAgICBpZiB7ICRyYW5kIDwgJGRpc3RyaWJ1dGlvbiB9IHsgCiAgICAgICAgICAgICAgICAgICAgcG9vbCAkYmx1ZV9wb29sCiAgICAgICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgICAgIHBvb2wgJGdyZWVuX3Bvb2wKICAgICAgICAgICAgICAgIH0KfQ=="
+                        }
+                    }
+                }
+            }
+        }
+    }
