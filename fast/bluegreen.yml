@@ -68,7 +68,7 @@ template: |
                             "{{partition}}_bluegreen_irule"
                         ],
                         {{/enableBGDistribution}}
-                        "pool": "{{defaultpool}}"
+                        "pool": "{{defaultPool}}"
                     },
                     "{{bluePool}}": {
                         "class": "Pool",
