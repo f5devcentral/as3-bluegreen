@@ -31,16 +31,17 @@ VIP_INFO = [
 ```
 
 ## Start a Locust Instance
-at a command line the following environment variables
+at a command line, define the following environment variables
 ```shell
 export BIGIP_ADDRESS="https://ip-or-fqdn-of-big-ip"
 export BIGIP_USER="admin"
 export BIGIP_PASS="password-for-admin-account-on-big-ip"
+export BLUEGREEN_STEP_WAIT="number of seconds between steps in the blue-green workflow"
 ```
 
-in the same command line session run the following command to start locust
+in the same command line session run the following command to start locust. 
 ```shell
-docker run --env BIGIP_USER=$BIGIP_USER --env BIGIP_PASS=$BIGIP_PASS -p 8089:8089 -v $PWD:/mnt/locust locustio/locust -f /mnt/locust/fast-as3-bluegreen-test.py --host $BIGIP_ADDRESS
+docker run --env BIGIP_USER=$BIGIP_USER --env BIGIP_PASS=$BIGIP_PASS --env BLUEGREEN_STEP_WAIT=$BLUEGREEN_STEP_WAIT -p 8089:8089 -v $PWD:/mnt/locust locustio/locust -f /mnt/locust/fast-as3-bluegreen-test.py --host $BIGIP_ADDRESS
 ```
 
 The [Docker site](https://docs.docker.com/) and others have more elaborate information on the various command line parameters. The options used here are:
