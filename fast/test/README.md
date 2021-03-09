@@ -4,8 +4,23 @@
 - Follow [these directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/latest/userguide/installation.html#installation) to install AS3  
 - Follow [these directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-templates/latest/userguide/install-uninstall.html) to install F5 Applications Services Templates (FAST)
 
+## Enable BurstHandling for AS3
+ - Follow [these directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/latest/userguide/burst-handling.html?highlight=burst)
+ - Or, if you have the VS Code [Rest Client extension](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) installed, use the following 
+ ```
+###
+# @name setbursthandling
+POST https://{{$dotenv bigip}}/mgmt/shared/appsvcs/settings
+Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
+Content-Type: application/json
+
+{
+    "burstHandlingEnabled": true
+}
+ ```
+
 ## Install the BlueGreen FAST Template
-- create a zip file of the `bluegreen.yml` file:
+- create a zip file of the [`bluegreen.yml`](../bluegreen.yml) file:
 
 ```bash
 $ zip -r bluegreen.zip bluegreen.yaml
@@ -32,11 +47,15 @@ VIP_INFO = [
 
 ## Start a Locust Instance
 at a command line, define the following environment variables
-```shell
-export BIGIP_ADDRESS="https://ip-or-fqdn-of-big-ip"
+```bash
+# IP or FQDN of BIG-IP
+export BIGIP_ADDRESS="https://bigip.example.com"
+# username with which to authenticate on the BIG-IP
 export BIGIP_USER="admin"
-export BIGIP_PASS="password-for-admin-account-on-big-ip"
-export BLUEGREEN_STEP_WAIT="number of seconds between steps in the blue-green workflow"
+# password for BIGI_USER
+export BIGIP_PASS="supersecretpassword"
+# number of seconds between steps in the blue-green workflow
+export BLUEGREEN_STEP_WAIT="60"
 ```
 
 in the same command line session run the following command to start locust. 
