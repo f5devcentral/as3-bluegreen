@@ -16,7 +16,7 @@ definitions:
     title: "What is the service"
   distribution:
     title: "Percentage"
-    description: "Amount of traffic (value between 0.0 and 1.0) to send to blue or green.  0.0 will send all traffic to blue, 1.0 will send all traffic to green.  0.5 will send 50% to blue and 50% to green."
+    description: "Amount of traffic (value between 0.0 and 1.0) to send to blue or green.  1.0 will send all traffic to blue, 0.0 will send all traffic to green.  0.5 will send 50% to blue and 50% to green."
   bluePool:
     title: "Name of Blue pool"
   greenPool:
@@ -68,7 +68,7 @@ template: |
                             "{{partition}}_bluegreen_irule"
                         ],
                         {{/enableBGDistribution}}
-                        "pool": "{{defaultpool}}"
+                        "pool": "{{defaultPool}}"
                     },
                     "{{bluePool}}": {
                         "class": "Pool",
