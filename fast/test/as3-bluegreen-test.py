@@ -2,9 +2,11 @@ from locust import HttpUser, task, between, constant, SequentialTaskSet
 import json
 import jinja2
 import os
+import logging
 from vips import *
 
-
+TEMPLATE_FILE = "bluegreen.json.j2"
+logging.basicConfig(level=logging.DEBUG)
 class BlueGreenTasks(SequentialTaskSet):
     vip_address = "NOT_FOUND"
     tenant_name = "NOT_FOUND"
@@ -12,11 +14,9 @@ class BlueGreenTasks(SequentialTaskSet):
     bigip_user = os.getenv('BIGIP_USER')
     bigip_pass = os.getenv('BIGIP_PASS')
     task_label = ""
-    templateLoader = jinja2.FileSystemLoader(searchpath="./")
+    templateLoader = jinja2.FileSystemLoader(searchpath="/mnt/locust/")
     templateEnv = jinja2.Environment(loader=templateLoader)
-    TEMPLATE_FILE = "template.html"
     template = templateEnv.get_template(TEMPLATE_FILE)
-    outputText = template.render()  # this is where to put args to the template renderer
 
     def on_start(self):
         if len(VIP_INFO) > 0:
@@ -24,28 +24,34 @@ class BlueGreenTasks(SequentialTaskSet):
 
     @task
     def set_blue100_green000_off_blue(self):
-        json_payload = {"name":"bluegreen/bluegreen","parameters": {"partition": self.tenant_name, "virtualAddress": self.vip_address, "virtualPort": 80, "application": self.app_name, "distribution": "0.5", "bluePool": "blue", "greenPool": "green", "enableBGDistribution": False, "defaultPool": "blue"}}
-        r = self.client.post("/mgmt/shared/fast/applications",  name="1_blue100_green000_off_blue_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(json_payload))
+        as3_payload = self.template.render(partition = self.tenant_name, application = self.app_name, virtualPort = 80, virtualAddress = self.vip_address, iRuleName = "", distribution = "0.5", enableBGDistribution = False, defaultPool = "blue", bluePool = "blue", greenPool = "green")
+        logging.info(as3_payload)
+        r = self.client.post("/mgmt/shared/appsvcs/declare",  name="1_blue100_green000_off_blue_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(as3_payload))
 
     @task
     def set_blue080_green020_on_blue(self):
-        json_payload = {"name":"bluegreen/bluegreen","parameters": {"partition": self.tenant_name, "virtualAddress": self.vip_address, "virtualPort": 80, "application": self.app_name, "distribution": "0.8", "bluePool": "blue", "greenPool": "green", "enableBGDistribution": True, "defaultPool": "blue"}}
-        r = self.client.post("/mgmt/shared/fast/applications",  name="2_blue080_green020_on_blue_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(json_payload))
+        as3_payload = self.template.render(partition = self.tenant_name, application = self.app_name, virtualPort = 80, virtualAddress = self.vip_address, iRuleName = "", distribution = "0.8", enableBGDistribution = True, defaultPool = "blue", bluePool = "blue", greenPool = "green")
+        logging.info(as3_payload)
+        r = self.client.post("/mgmt/shared/appsvcs/declare?unchecked=true",  name="2_blue080_green020_on_blue_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(as3_payload))
 
     @task
     def set_blue020_green080_on_blue(self):
-        json_payload = {"name":"bluegreen/bluegreen","parameters": {"partition": self.tenant_name, "virtualAddress": self.vip_address, "virtualPort": 80, "application": self.app_name, "distribution": "0.2", "bluePool": "blue", "greenPool": "green", "enableBGDistribution": True, "defaultPool": "blue"}}
-        r = self.client.post("/mgmt/shared/fast/applications",  name="3_blue020_green080_on_blue_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(json_payload))
+        as3_payload = self.template.render(partition = self.tenant_name, application = self.app_name, virtualPort = 80, virtualAddress = self.vip_address, iRuleName = "", distribution = "0.2", enableBGDistribution = True, defaultPool = "blue", bluePool = "blue", greenPool = "green")
+        logging.info(as3_payload)
+        r = self.client.post("/mgmt/shared/appsvcs/declare?unchecked=true",  name="3_blue020_green080_on_blue_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(as3_payload))
 
     @task
     def set_blue020_green080_on_green(self):
-        json_payload = {"name":"bluegreen/bluegreen","parameters": {"partition": self.tenant_name, "virtualAddress": self.vip_address, "virtualPort": 80, "application": self.app_name, "distribution": "0.2", "bluePool": "blue", "greenPool": "green", "enableBGDistribution": True, "defaultPool": "green"}}
-        r = self.client.post("/mgmt/shared/fast/applications",  name="4_blue020_green080_on_green_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(json_payload))
+        as3_payload = self.template.render(partition = self.tenant_name, application = self.app_name, virtualPort = 80, virtualAddress = self.vip_address, iRuleName = "", distribution = "0.2", enableBGDistribution = True, defaultPool = "green", bluePool = "blue", greenPool = "green")
+        logging.info(as3_payload)
+        r = self.client.post("/mgmt/shared/appsvcs/declare?unchecked=true",  name="4_blue020_green080_on_green_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(as3_payload))
+
 
     @task
     def set_blue020_green080_off_green(self):
-        json_payload = {"name":"bluegreen/bluegreen","parameters": {"partition": self.tenant_name, "virtualAddress": self.vip_address, "virtualPort": 80, "application": self.app_name, "distribution": "0.2", "bluePool": "blue", "greenPool": "green", "enableBGDistribution": False, "defaultPool": "green"}}
-        r = self.client.post("/mgmt/shared/fast/applications",  name="5_blue020_green080_off_green_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(json_payload))
+        as3_payload = self.template.render(partition = self.tenant_name, application = self.app_name, virtualPort = 80, virtualAddress = self.vip_address, iRuleName = "", distribution = "0.2", enableBGDistribution = False, defaultPool = "green", bluePool = "blue", greenPool = "green")
+        logging.info(as3_payload)
+        r = self.client.post("/mgmt/shared/appsvcs/declare?unchecked=true",  name="5_blue020_green080_off_green_" + self.task_label, verify=False, auth=(self.bigip_user,self.bigip_pass), data=json.dumps(as3_payload))
 
 
 class BlueGreenUser(HttpUser):

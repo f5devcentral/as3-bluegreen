@@ -1,0 +1,94 @@
+{
+    "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/3.25.0/as3-schema-3.25.0-3.json",
+    "class": "AS3",
+    "action": "deploy",
+    "persist": true,
+    "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.25.0",
+        "id": "id_{{partition}}",
+        "label": "{{partition}}",
+        "remark": "An HTTP service with percentage based traffic distribution",
+        "{{partition}}": {
+            "class": "Tenant",
+            "{{application}}": {
+                "class": "Application",
+                "service": {
+                    "class": "Service_L4",
+                    "virtualAddresses": [
+                        "{{virtualAddress}}"
+                    ],
+                    "virtualPort": {{virtualPort}},
+                    "persistenceMethods": [],
+                    "profileL4": {
+                        "bigip":"/Common/fastL4"
+                    },
+                    "snat":"auto",
+                    {% if enableBGDistribution -%}
+                    "iRules": [
+                        "{{partition}}_bluegreen_irule"
+                    ],
+                    {% endif -%}
+                    "pool": "{{defaultPool}}"
+                },
+                "{{bluePool}}": {
+                    "class": "Pool",
+                    "loadBalancingMode": "round-robin",
+                    "members": [
+                        {
+                            "servicePort": 80,
+                            "addressDiscovery": "event",
+                            "shareNodes": true
+                        }
+                    ],
+                    "monitors": [
+                        {
+                            "bigip": "/Common/tcp"
+                        }
+                    ]
+                },
+                "{{greenPool}}": {
+                    "class": "Pool",
+                    "loadBalancingMode": "round-robin",
+                    "members": [
+                        {
+                            "servicePort": 80,
+                            "addressDiscovery": "event",
+                            "shareNodes": true
+                        }
+                    ],
+                    "monitors": [
+                        {
+                            "bigip": "/Common/tcp"
+                        }
+                    ]
+                },
+                "bluegreen_datagroup": {
+                    "class": "Data_Group",
+                    "remark": "BlueGreen Data Group for service",
+                    "keyDataType": "string",
+                    "records": [
+                        {
+                            "key": "distribution",
+                            "value": "{{distribution}}"
+                        },
+                        {
+                            "key": "blue_pool",
+                            "value": "/{{partition}}/{{application}}/{{bluePool}}"
+                        },
+                        {
+                            "key": "green_pool",
+                            "value": "/{{partition}}/{{application}}/{{greenPool}}"
+                        }
+                    ]
+                },
+                "{{partition}}_bluegreen_irule": {
+                    "class": "iRule",
+                    "iRule": {
+                        "base64": "Cgp3aGVuIENMSUVOVF9BQ0NFUFRFRCB7CiAgICAgICAgc2V0IGRpc3RyaWJ1dGlvbiBbY2xhc3MgbWF0Y2ggLXZhbHVlICJkaXN0cmlidXRpb24iIGVxdWFscyBibHVlZ3JlZW5fZGF0YWdyb3VwXQogICAgICAgIHNldCBibHVlX3Bvb2wgW2NsYXNzIG1hdGNoIC12YWx1ZSAiYmx1ZV9wb29sIiBlcXVhbHMgYmx1ZWdyZWVuX2RhdGFncm91cF0KICAgICAgICBzZXQgZ3JlZW5fcG9vbCBbY2xhc3MgbWF0Y2ggLXZhbHVlICJncmVlbl9wb29sIiBlcXVhbHMgYmx1ZWdyZWVuX2RhdGFncm91cF0KICAgICAgICAgICAgICAgIHNldCByYW5kIFtleHByIHsgcmFuZCgpIH1dCiAgICAgICAgICAgICAgICBpZiB7ICRyYW5kIDwgJGRpc3RyaWJ1dGlvbiB9IHsgCiAgICAgICAgICAgICAgICAgICAgcG9vbCAkYmx1ZV9wb29sCiAgICAgICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgICAgIHBvb2wgJGdyZWVuX3Bvb2wKICAgICAgICAgICAgICAgIH0KfQ=="
+                    }
+                }
+            }
+        }
+    }
+}
