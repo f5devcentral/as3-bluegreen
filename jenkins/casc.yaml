@@ -1,0 +1,53 @@
+jenkins:
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+       - id: ${JENKINS_ADMIN_ID}
+         password: ${JENKINS_ADMIN_PASSWORD}
+  authorizationStrategy:
+      globalMatrix:
+        permissions:
+          - "Overall/Administer:admin"
+          - "Overall/Read:authenticated"
+  remotingSecurity:
+    enabled: true
+security:
+  queueItemAuthenticator:
+    authenticators:
+    - global:
+        strategy: triggeringUsersAuthorizationStrategy          
+unclassified:
+  location:
+    url: http://vangogh:8080/
+jobs:
+  - script: >
+      job('Job_DSL_Seed') {
+        scm {
+          git {
+            remote {
+              url 'ssh://git.example.com/project/jenkins-jobs.git'
+            }
+          }
+        }
+        steps {
+          jobDsl {
+            targets 'jobs/**/*.groovy'
+          }
+        }
+      }
+  - script: >
+      job('example') {
+        parameters{
+            stringParam('DEPLOY_URI', 'https://192.168.86.166/mgmt/shared/appsvcs/declare', 'Provide the URL where DeploymentManager can be accessed.')
+            stringParam('REG_ID', '12', 'The id of the owner (Registration) of this deployment.')
+        }
+        steps {
+            httpRequest('$DEPLOY_URI') {
+                httpMode('GET')
+                authentication('Credentials')
+                returnCodeBuildRelevant()
+                logResponseBody()
+            }
+        }
+      }
