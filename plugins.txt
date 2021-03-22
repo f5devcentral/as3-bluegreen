@@ -24,4 +24,3 @@ job-dsl:latest
 workflow-job:latest
 workflow-cps:latest
 blueocean:latest
-metrics:latest

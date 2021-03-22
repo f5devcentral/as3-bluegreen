@@ -20,34 +20,14 @@ security:
 unclassified:
   location:
     url: http://vangogh:8080/
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+        - usernamePassword:
+            scope: GLOBAL
+            id: "bigip-creds"
+            username: "${BIGIP_ADMIN_ID}"
+            password: "${BIGIP_ADMIN_PASSWORD}"
 jobs:
-  - script: >
-      job('Job_DSL_Seed') {
-        scm {
-          git {
-            remote {
-              url 'ssh://git.example.com/project/jenkins-jobs.git'
-            }
-          }
-        }
-        steps {
-          jobDsl {
-            targets 'jobs/**/*.groovy'
-          }
-        }
-      }
-  - script: >
-      job('example') {
-        parameters{
-            stringParam('DEPLOY_URI', 'https://192.168.86.166/mgmt/shared/appsvcs/declare', 'Provide the URL where DeploymentManager can be accessed.')
-            stringParam('REG_ID', '12', 'The id of the owner (Registration) of this deployment.')
-        }
-        steps {
-            httpRequest('$DEPLOY_URI') {
-                httpMode('GET')
-                authentication('Credentials')
-                returnCodeBuildRelevant()
-                logResponseBody()
-            }
-        }
-      }
+  - file: /usr/local/as3buffer.groovy
