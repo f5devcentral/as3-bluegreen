@@ -16,7 +16,7 @@ VIP_INFO = [
 ]
 ```
 ## Start an AS3BUFFER container
-Which can be found [here](https://github.com/mjmenger/as3buffer), mmenger/as3buffer:0.1.0 (<-- there's going to be breaking change in 0.2.0). And, don't forget to prime the pump as described in the as3buffer README.
+Which can be found [here](https://github.com/mjmenger/as3buffer), using mmenger/as3buffer:0.1.0 (<-- there's going to be breaking change in 0.2.0). And, don't forget to prime the pump as described in the as3buffer README.
 
 ## Start a Locust Instance
 at a command line, define the following environment variables
