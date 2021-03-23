@@ -3,11 +3,18 @@
 
 ## Enable BurstHandling for AS3
  - Follow [these directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/latest/userguide/burst-handling.html?highlight=burst)
+ - Or, execute this curl command
+```
+ curl --header "Content-Type: application/json" -X POST -u admin:adminpassword -k https://bigipaddress/mgmt/shared/appsvcs/settings -d '{ "burstHandlingEnabled": true }'
+``` 
  - Or, if you have the VS Code [Rest Client extension](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) installed, use the following 
+ 
+ 
  ```
 ###
 # @name setbursthandling
-POST https://{{$dotenv bigip}}/mgmt/shared/appsvcs/settings
+#
+POST https://bigip/mgmt/shared/appsvcs/settings
 Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
 Content-Type: application/json
 
