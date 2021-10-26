@@ -3,3 +3,4 @@ load/__pycache__
 fast/bluegreen.zip
 **/__pycache__*
 fast/test/locust.log
+fast/test/viparray.py
