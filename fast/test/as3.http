@@ -1,0 +1,111 @@
+#
+# bigip address, username, and password are 
+# retrieved from a .env file
+#
+# the format of the .env file looks like
+# bigip1=0.0.0.0
+# user=username
+# password=yoursecretpassword
+#
+
+###
+# @name as3status
+#
+GET https://{{$dotenv bigip1}}/mgmt/shared/appsvcs/declare
+Authorization: Basic {{$dotenv user}} {{$dotenv password}}
+Content-Type: application/json
+
+
+###
+# @name deletetenant
+#
+DELETE https://{{$dotenv bigip1}}/mgmt/shared/appsvcs/declare/SampleTenant
+Authorization: Basic {{$dotenv user}} {{$dotenv password}}
+Content-Type: application/json
+
+###
+# @name = postas3
+#
+POST https://{{$dotenv bigip1}}/mgmt/shared/appsvcs/declare
+Authorization: Basic {{$dotenv user}} {{$dotenv password}}
+Content-Type: application/json
+
+{
+    "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/3.25.0/as3-schema-3.25.0-3.json",
+    "class": "AS3",
+    "action": "deploy",
+    "persist": true,
+    "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.25.0",
+        "id": "id_Test10.210.102.159",
+        "label": "Test10.210.102.159",
+        "remark": "An HTTP service with percentage based traffic distribution",
+        "Test10.210.102.159": {
+            "class": "Tenant",
+            "App": {
+                "class": "Application",
+                "service": {
+                    "class": "Service_L4",
+                    "virtualAddresses": [
+                        "10.210.102.159"
+                    ],
+                    "virtualPort": 80,
+                    "persistenceMethods": [],
+                    "profileL4": {
+                        "bigip":"/Common/fastL4"
+                    },
+                    "snat":"auto",
+                    "pool": {"bigip":"/Common/Shared/blue"}
+                },
+                "bluegreen_datagroup": {
+                    "class": "Data_Group",
+                    "remark": "BlueGreen Data Group for service",
+                    "keyDataType": "string",
+                    "records": [
+                        {
+                            "key": "distribution",
+                            "value": "0.5"
+                        },
+                        {
+                            "key": "blue_pool",
+                            "value": "/Common/Shared/blue"
+                        },
+                        {
+                            "key": "green_pool",
+                            "value": "/Common/Shared/green"
+                        }
+                    ]
+                },
+                "Test10.210.102.159_bluegreen_irule": {
+                    "class": "iRule",
+                    "iRule": {
+                        "base64": "Cgp3aGVuIENMSUVOVF9BQ0NFUFRFRCB7CiAgICAgICAgc2V0IGRpc3RyaWJ1dGlvbiBbY2xhc3MgbWF0Y2ggLXZhbHVlICJkaXN0cmlidXRpb24iIGVxdWFscyBibHVlZ3JlZW5fZGF0YWdyb3VwXQogICAgICAgIHNldCBibHVlX3Bvb2wgW2NsYXNzIG1hdGNoIC12YWx1ZSAiYmx1ZV9wb29sIiBlcXVhbHMgYmx1ZWdyZWVuX2RhdGFncm91cF0KICAgICAgICBzZXQgZ3JlZW5fcG9vbCBbY2xhc3MgbWF0Y2ggLXZhbHVlICJncmVlbl9wb29sIiBlcXVhbHMgYmx1ZWdyZWVuX2RhdGFncm91cF0KICAgICAgICAgICAgICAgIHNldCByYW5kIFtleHByIHsgcmFuZCgpIH1dCiAgICAgICAgICAgICAgICBpZiB7ICRyYW5kIDwgJGRpc3RyaWJ1dGlvbiB9IHsgCiAgICAgICAgICAgICAgICAgICAgcG9vbCAkYmx1ZV9wb29sCiAgICAgICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgICAgIHBvb2wgJGdyZWVuX3Bvb2wKICAgICAgICAgICAgICAgIH0KfQ=="
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+###
+# @name = patchas3
+#
+PATCH https://{{$dotenv bigip1}}/mgmt/shared/appsvcs/declare
+Authorization: Basic {{$dotenv user}} {{$dotenv password}}
+Content-Type: application/json
+
+[
+    {
+        "op": "add",
+        "path": "/NGINXALT/A1/ASM_Policy",
+        "value": {
+                   "class":"WAF_Policy",
+                   "url":"https://github.com/mjmenger/waf-policy/raw/0.1.0/asm_policy.xml",
+                   "ignoreChanges": false
+                }
+    }
+]
+
+
