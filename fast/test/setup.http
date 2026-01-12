@@ -1,0 +1,171 @@
+###
+# @name setbursthandling
+POST https://{{$dotenv bigip1}}/mgmt/shared/appsvcs/settings
+Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
+Content-Type: application/json
+
+{
+    "burstHandlingEnabled": true
+}
+
+###
+# @name checkbursthandling
+GET https://{{$dotenv bigip1}}/mgmt/shared/appsvcs/settings
+Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
+Content-Type: application/json
+
+
+
+###
+# @name checkextramb
+#
+GET https://{{$dotenv bigip1}}/mgmt/tm/sys/db/provision.extramb
+Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
+Content-Type: application/json
+
+###
+# @name patchextramb
+#
+PATCH https://{{$dotenv bigip1}}/mgmt/tm/sys/db/provision.extramb
+Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
+Content-Type: application/json
+
+{
+    "value": "1000"
+}
+
+###
+# @name useextramb
+#
+PATCH https://{{$dotenv bigip1}}/mgmt/tm/sys/db/restjavad.useextramb
+Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
+Content-Type: application/json
+
+{
+    "value": true
+}
+
+
+###
+# @name restartrestjavad
+#
+# because of the relationship between restjavad and iControlRest
+# this will likely return an error even though restjavad is restarting
+POST https://{{$dotenv bigip1}}/mgmt/tm/sys/service
+Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
+Content-Type: application/json
+
+{
+    "command": "restart",
+    "name": "restjavad"
+}
+
+###
+# @name checkservices
+#
+GET https://{{$dotenv bigip1}}/mgmt/tm/sys/service/stats
+Authorization: Basic {{$dotenv user}} {{$dotenv password}} 
+Content-Type: application/json
+
+
+###
+# @name createpools
+#
+POST https://{{$dotenv bigip1}}/mgmt/shared/appsvcs/declare
+Authorization: Basic {{$dotenv user}} {{$dotenv password}}
+Content-Type: application/json
+
+{
+    "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/3.25.0/as3-schema-3.25.0-3.json",
+    "class": "AS3",
+    "action": "deploy",
+    "persist": true,
+    "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.25.0",
+        "id": "id_bluegreen_setup_1234",
+        "label": "",
+        "remark": "Setup Target Blue and Green Pools",
+        "Common": {
+            "class": "Tenant",
+            "Shared": {
+                "class": "Application",
+                "template": "shared",
+                "blue": {
+                    "class": "Pool",
+                    "monitors": [
+                        "tcp"
+                    ],
+                    "members": [{
+                        "servicePort": 80,
+                        "serverAddresses": [
+                        "10.211.100.1",
+                        "10.211.100.2",
+                        "10.211.100.3",
+                        "10.211.100.4",
+                        "10.211.100.5"
+                        ]
+                    }]
+                },
+                "green": {
+                    "class": "Pool",
+                    "monitors": [
+                        "tcp"
+                    ],
+                    "members": [{
+                        "servicePort": 80,
+                        "serverAddresses": [
+                        "10.211.100.6",
+                        "10.211.100.7",
+                        "10.211.100.8",
+                        "10.211.100.9",
+                        "10.211.100.10"
+                        ]
+                    }]
+                }
+
+            }
+        }
+    }
+}
+
+
+###
+# @name createvips
+#
+POST https://{{$dotenv bigip1}}/mgmt/shared/appsvcs/declare
+Authorization: Basic {{$dotenv user}} {{$dotenv password}}
+Content-Type: application/json
+
+{
+    "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/3.25.0/as3-schema-3.25.0-3.json",
+    "class": "AS3",
+    "action": "deploy",
+    "persist": true,
+    "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.25.0",
+        "id": "id_{{partition}}",
+        "label": "{{partition}}",
+        "remark": "An HTTP service with percentage based traffic distribution",
+        "{{partition}}": {
+            "class": "Tenant",
+            "{{application}}": {
+                "class": "Application",
+                "service": {
+                    "class": "Service_L4",
+                    "virtualAddresses": [
+                        "{{virtualAddress}}"
+                    ],
+                    "virtualPort": {{virtualPort}},
+                    "persistenceMethods": [],
+                    "profileL4": {
+                        "bigip":"/Common/fastL4"
+                    },
+                    "snat":"auto",
+                    "pool": "/Common/Shared/blue"
+                }
+            }
+        }
+    }
+}
